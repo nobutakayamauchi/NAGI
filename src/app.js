@@ -1,4 +1,4 @@
-import { addThing, checkpointCurrent, completeCurrent, createInitialState, getPlan, resumeFromCheckpoint, setIntent, setThingState, startThing, staleWaitingItems } from './core/engine.js';
+import { addThing, appendCurrentNote, checkpointCurrent, completeCurrent, createInitialState, getPlan, resumeFromCheckpoint, setIntent, setThingState, startThing, staleWaitingItems } from './core/engine.js';
 import { STATES } from './core/model.js';
 import { exportState, loadState, saveState } from './core/store.js';
 import { advise } from './adapters/local-advisor.js';
@@ -8,7 +8,8 @@ const $ = id => document.getElementById(id);
 const els = {
   advisor:$('advisor'), candidates:$('candidateList'), thingList:$('thingList'), checkpointList:$('checkpointList'),
   currentActions:$('currentActions'), stateBadge:$('stateBadge'), watchWarning:$('watchWarning'), checkpointCount:$('checkpointCount'),
-  interruptStack:$('interruptStack'), interruptBtn:$('interruptBtn')
+  interruptStack:$('interruptStack'), interruptBtn:$('interruptBtn'), currentNoteForm:$('currentNoteForm'),
+  currentNoteInput:$('currentNoteInput'), currentNotes:$('currentNotes')
 };
 const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 const STATE_LABELS = Object.freeze({
@@ -106,7 +107,14 @@ function render(){
   els.stateBadge.textContent=cur?stateLabel(cur.state):'今は作業なし';
   els.currentActions.classList.toggle('hidden',!cur);
   els.interruptBtn.classList.toggle('hidden',!cur);
+  els.currentNoteForm.classList.toggle('hidden',!cur);
   if(cur) els.advisor.textContent=`いま「${cur.title}」をやってる。途中で飛んでも、戻る場所は残せるよ。`;
+
+  const noteLines=cur?.notes ? cur.notes.split('\n').filter(Boolean) : [];
+  els.currentNotes.classList.toggle('hidden',!noteLines.length);
+  els.currentNotes.innerHTML=noteLines.length
+    ? `<div class="current-notes-title">今の内容</div>${noteLines.map(n=>`<div class="current-note-item">${esc(n)}</div>`).join('')}`
+    : '';
 
   const stacked=returnStackThings();
   els.interruptStack.classList.toggle('hidden',!stacked.length);
@@ -135,6 +143,15 @@ function render(){
 
 $('thingForm').addEventListener('submit',e=>{e.preventDefault();addFromForm();});
 els.interruptBtn.addEventListener('click',()=>addFromForm({interrupt:true}));
+els.currentNoteForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  const text=els.currentNoteInput.value.trim();
+  if(!text || !state.currentId)return;
+  state=appendCurrentNote(state,text);
+  els.currentNoteInput.value='';
+  persist();
+  els.advisor.textContent='今の内容に追加した。もう頭で持っておかなくていい。';
+});
 $('intentSelect').addEventListener('change',e=>{state=setIntent(state,e.target.value);persist();showPlan({materialTrigger:true});});
 $('quickGrid').addEventListener('click',e=>{
   const a=e.target.dataset.action;if(!a)return;
@@ -162,7 +179,7 @@ document.addEventListener('click',e=>{
 
 $('checkpointBtn').addEventListener('click',()=>{const next=prompt('次にやることを一言だけ残すなら？','');const progress=prompt('どこまでやった？（空でもOK）','');const out=checkpointCurrent(state,{nextAction:next||'',progress:progress||'',stopReason:'explicit user checkpoint'});state=out.state;persist();els.advisor.textContent='覚えた。忘れても、ここから戻れる。';});
 $('waitBtn').addEventListener('click',()=>{if(!state.currentId)return;const id=state.currentId;state=setThingState(state,id,STATES.WAITING);const t=state.things.find(x=>x.id===id);t.watch={leaseUntil:null,source:'manual-unmonitored'};state.currentId=null;persist();showPlan({materialTrigger:true,message:'これは待ちに置いた。ただしv0には外部監視がまだないので「忘れて大丈夫」とは扱わない。'});});
-$('doneBtn').addEventListener('click',()=>{const out=completeCurrent(state);state=out.state;persist();if(out.resumeCandidate){const cp=state.checkpoints.find(c=>c.id===out.resumeCandidate.checkpointId);const thing=state.things.find(t=>t.id===out.resumeCandidate.thingId);els.advisor.textContent=thing?`終わった。中断前の「${thing.title}」へ戻れる。`:'終わった。中断前の作業へ戻れる。';showResumeCandidate(out.resumeCandidate);}else showPlan({materialTrigger:true,message:'終わった。次をひとつだけ見よう。'});});
+$('doneBtn').addEventListener('click',()=>{const out=completeCurrent(state);state=out.state;persist();if(out.resumeCandidate){const thing=state.things.find(t=>t.id===out.resumeCandidate.thingId);els.advisor.textContent=thing?`終わった。中断前の「${thing.title}」へ戻れる。`:'終わった。中断前の作業へ戻れる。';showResumeCandidate(out.resumeCandidate);}else showPlan({materialTrigger:true,message:'終わった。次をひとつだけ見よう。'});});
 $('exportBtn').addEventListener('click',()=>{const blob=new Blob([exportState(state)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='nagi-state.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);});
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
