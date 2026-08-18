@@ -43,6 +43,7 @@
     <section class="panel now-panel">
       <div class="section-head"><h2>いま</h2><span id="stateBadge" class="badge">今は作業なし</span></div>
       <div id="advisor" class="advisor">まだ何も抱えてないよ。下からひとつ置いてみて。</div>
+      <div id="interruptStack" class="interrupt-stack hidden"></div>
       <div id="candidateList" class="candidates"></div>
       <div id="currentActions" class="action-row hidden">
         <button id="checkpointBtn">ここまで覚えといて</button>
@@ -65,6 +66,7 @@
               <option value="social">人と過ごす</option>
             </select>
           </label>
+          <button id="interruptBtn" class="interrupt hidden" type="button">緊急で割り込む</button>
           <button class="primary" type="submit">追加</button>
         </div>
       </form>
