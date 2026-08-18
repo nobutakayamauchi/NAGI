@@ -36,6 +36,12 @@ Risk: multiple simultaneous RUNNING tasks or broken resume semantics.
 Repair: RUNNING may only be entered through startThing().
 Result: repaired; randomized invariant test PASS.
 
+### I-05 — Root-absolute asset paths break project-site hosting
+Observed during public deployment preparation: root-absolute URLs (`/src/...`, `/sw.js`) work at domain root but break when hosted under a project path such as `/NAGI/`.
+Risk: Web/PWA passes local smoke tests but fails after public deployment.
+Repair: app shell, manifest start URL, service-worker registration and precache URLs are project-path relative.
+Result: repaired; local root hosting remains valid and project-path resolution is now portable.
+
 ## Frozen success criteria status
 - SC-01 <=3 next candidates: PASS
 - SC-02 WAITING/BLOCKED excluded from action candidates: PASS

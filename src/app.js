@@ -84,5 +84,5 @@ $('waitBtn').addEventListener('click',()=>{if(!state.currentId)return;const id=s
 $('doneBtn').addEventListener('click',()=>{const out=completeCurrent(state);state=out.state;persist();if(out.resumeCandidate){const cp=state.checkpoints.find(c=>c.id===out.resumeCandidate.checkpointId);els.advisor.textContent=cp?`終わった。次は中断前の「${cp.title}」へ戻れる。`:'終わった。中断前の作業へ戻れる。';}else showPlan({materialTrigger:true,message:'終わった。次をひとつだけ見よう。'});});
 $('exportBtn').addEventListener('click',()=>{const blob=new Blob([exportState(state)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='nagi-state.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);});
 
-if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 render();

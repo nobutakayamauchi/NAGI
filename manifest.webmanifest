@@ -1,7 +1,7 @@
 {
   "name":"NAGI — 困った時に、少し持ちます。",
   "short_name":"NAGI",
-  "start_url":"/",
+  "start_url":"./",
   "display":"standalone",
   "background_color":"#f5f3ee",
   "theme_color":"#f5f3ee",
