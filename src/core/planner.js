@@ -50,6 +50,7 @@ export function planNext({ things, now = new Date(), availableMinutes = Infinity
   candidates.sort((a,b) => b.score - a.score || Date.parse(a.thing.createdAt) - Date.parse(b.thing.createdAt));
 
   return {
+    intent,
     candidates: candidates.slice(0, Math.max(1, Math.min(limit, 3))),
     staleWatches,
     noActionOption: { id: 'NO_ACTION', title: intent === 'rest' ? 'そのまま休む' : '今は決めない', reason: '何もしない/後で決めるのも有効な選択' }
