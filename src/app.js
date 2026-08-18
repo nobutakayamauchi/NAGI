@@ -85,6 +85,21 @@ function addFromForm({interrupt=false}={}){
   return added;
 }
 
+function urgentFromQuick(){
+  const raw=prompt('急ぎは何？','');
+  const title=String(raw ?? '').trim();
+  if(!title)return null;
+  const prior=currentThing();
+  state=addThing(state,{title,durationMinutes:25,intent:'work'});
+  const added=state.things.at(-1);
+  state=startThing(state,added.id,new Date(),'urgent quick interrupt');
+  persist();
+  els.advisor.textContent=prior
+    ? `「${added.title}」を今すぐ始めた。中断前の「${prior.title}」は戻る順に積んである。`
+    : `「${added.title}」を今すぐ始めた。`;
+  return added;
+}
+
 function render(){
   $('intentSelect').value=state.intent || 'work';
   const cur=currentThing();
@@ -123,6 +138,7 @@ els.interruptBtn.addEventListener('click',()=>addFromForm({interrupt:true}));
 $('intentSelect').addEventListener('change',e=>{state=setIntent(state,e.target.value);persist();showPlan({materialTrigger:true});});
 $('quickGrid').addEventListener('click',e=>{
   const a=e.target.dataset.action;if(!a)return;
+  if(a==='urgent'){urgentFromQuick();return;}
   if(a==='next')showPlan();
   if(a==='replan')showPlan({materialTrigger:true,message:'予定が崩れたなら、今の現実から最小限だけ組み直そう。'});
   if(a==='free')showPlan({materialTrigger:true,message:'予定が空いたね。今の目的と空き時間から、無理のない候補だけ出す。'});
