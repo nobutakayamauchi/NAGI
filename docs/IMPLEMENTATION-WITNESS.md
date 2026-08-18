@@ -5,12 +5,13 @@ Status: PASS / READY FOR DOGFOOD
 
 ## What was executed
 - Node built-in test suite.
-- 12 executable Core tests.
+- 14 executable regression tests (12 Core/invariant tests + 2 intent-aware UX tests).
 - 400-step randomized switching invariant check.
-- Syntax checks for all JS modules and service worker.
-- HTTP smoke check for app shell, manifest, service worker and every runtime module.
+- Syntax checks for JS modules and service worker.
+- HTTP smoke check for app shell, manifest, service worker and runtime modules.
+- Public GitHub Pages deployment and first iPhone dogfood smoke.
 
-## Findings discovered during implementation
+## Findings discovered during implementation and dogfood
 
 ### I-01 — Explicit rest intent lost to task priority
 Observed: first test run returned a work task when the user's explicit intent was rest.
@@ -42,18 +43,37 @@ Risk: Web/PWA passes local smoke tests but fails after public deployment.
 Repair: app shell, manifest start URL, service-worker registration and precache URLs are project-path relative.
 Result: repaired; local root hosting remains valid and project-path resolution is now portable.
 
+### I-06 — Rest was still framed as a fallback in no-candidate guidance
+Observed in first public iPhone dogfood: after explicitly selecting `rest`, the local advisor said no action was available and suggested that resting was also an option.
+Risk: the UI contradicts the already-selected intent and reintroduces the productivity-pressure framing that SC-11 exists to prevent.
+Repair: the plan now carries current intent into the advisor; no-action guidance is intent-aware. `rest` is treated as the selected direction rather than a consolation prize. Work/no-candidate guidance no longer pushes rest as a fallback.
+Result: repaired; 2 new UX regression tests PASS.
+
+### I-07 — Checkpoint context was persisted but not actually reconstructed for the user
+Observed by post-dogfood code review: checkpoints stored `progress` and `nextAction`, but the UI only showed title and timestamp and resume messages did not expose that context.
+Risk: NAGI could technically resume a Thing while still failing the human promise of "what was I doing / where do I continue?".
+DA: a checkpoint is last-known memory, not current truth; displaying it as current fact would create false confidence.
+Repair: checkpoint cards and resume guidance now surface `progress` as "最後に覚えた" and `nextAction` as "次にやる予定だった", and explicitly remind the user to re-check current reality.
+Result: repaired; JS syntax PASS. Real-device interruption/resume dogfood remains the next evidence gate.
+
+### I-08 — Internal state/intent codes leaked into the public UI
+Observed in public smoke and source review: values such as `READY` and raw intent codes such as `work` could be shown directly.
+Risk: implementation vocabulary increases cognitive load in a product whose purpose is to reduce it.
+Repair: internal values remain stable in Core, while the UI translates them to human language such as `今できる`, `いまやってる`, `待ち`, `完了`, `仕事・用事`, and `休む`.
+Result: repaired; JS syntax PASS.
+
 ## Frozen success criteria status
 - SC-01 <=3 next candidates: PASS
 - SC-02 WAITING/BLOCKED excluded from action candidates: PASS
-- SC-03 checkpoint survives state persistence model and carries restore context: PASS (browser reload path implemented; long-term durable storage deferred)
-- SC-04 interrupt/return stack: PASS
+- SC-03 checkpoint survives state persistence model and carries restore context: PASS at Core; public UI now exposes last-known progress/next-action semantics, awaiting real interruption/resume dogfood
+- SC-04 interrupt/return stack: PASS at Core; real-device flow is next evidence gate
 - SC-05 minimum-change plan stability: PASS
 - SC-06 freshness/UNKNOWN guards: PASS at Core level
 - SC-07 no silent permanent learning from behavior: PASS
 - SC-08 confirmed rules reversible/deletable: PASS
 - SC-09 no network/API keys required: PASS
 - SC-10 Core independent from UI + executable tests: PASS
-- SC-11 rest/play/social intent not automatically converted to productivity: PASS
+- SC-11 rest/play/social intent not automatically converted to productivity: PASS + UX regression locked
 - SC-12 bounded candidate surface/no-action option: PASS for v0 UI
 
 ## Known deferred gates — not solver failures
@@ -64,6 +84,8 @@ Result: repaired; local root hosting remains valid and project-path resolution i
 5. Real external writes remain outside v0 and require aggregate-risk/autonomy review.
 
 ## Witness convergence
-No new architecture-level perspective remained after the implementation repairs above. Remaining items map to explicitly deferred release gates rather than contradictions in frozen v0 Core.
+No new architecture-level contradiction was introduced by the public-dogfood repairs. The latest changes restore frozen intent semantics, human-readable state presentation, and checkpoint reconstruction without promoting last-known memory into current truth.
+
+Next evidence gate: real-device interruption → checkpoint → interruption task → completion → resume, verifying that the user can recover both the work item and its last-known context without relying on memory.
 
 Verdict: PASS / READY FOR SELF-DOGFOOD.
