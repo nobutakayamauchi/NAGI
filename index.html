@@ -45,6 +45,11 @@
       <div class="section-head"><h2>いま</h2><span id="stateBadge" class="badge">今は作業なし</span></div>
       <div id="advisor" class="advisor">まだ何も抱えてないよ。下からひとつ置いてみて。</div>
       <div id="interruptStack" class="interrupt-stack hidden"></div>
+      <form id="currentNoteForm" class="current-note hidden">
+        <input id="currentNoteInput" maxlength="240" placeholder="今の内容・メモを足す" />
+        <button type="submit">足す</button>
+      </form>
+      <div id="currentNotes" class="current-notes hidden"></div>
       <div id="candidateList" class="candidates"></div>
       <div id="currentActions" class="action-row hidden">
         <button id="checkpointBtn">ここまで覚えといて</button>
