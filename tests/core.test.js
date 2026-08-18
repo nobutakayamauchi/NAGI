@@ -32,6 +32,20 @@ test('SC-04 interrupt creates return checkpoint and completion exposes resume ca
   const done=completeCurrent(s,at('2026-08-18T00:03:00Z')); assert.equal(done.resumeCandidate.thingId,'a');
 });
 
+test('SC-04 nested interrupts unwind in LIFO order',()=>{
+  let s=createInitialState();
+  for(const id of ['a','b','c']) s=addThing(s,{id,title:id.toUpperCase()},at('2026-08-18T00:00:00Z'));
+  s=startThing(s,'a',at('2026-08-18T00:01:00Z'));
+  s=startThing(s,'b',at('2026-08-18T00:02:00Z'),'urgent interrupt');
+  s=startThing(s,'c',at('2026-08-18T00:03:00Z'),'urgent interrupt');
+  assert.deepEqual(s.returnStack.map(x=>x.thingId),['a','b']);
+  let done=completeCurrent(s,at('2026-08-18T00:04:00Z'));
+  assert.equal(done.resumeCandidate.thingId,'b');
+  s=resumeFromCheckpoint(done.state,done.resumeCandidate.checkpointId,at('2026-08-18T00:05:00Z')).state;
+  done=completeCurrent(s,at('2026-08-18T00:06:00Z'));
+  assert.equal(done.resumeCandidate.thingId,'a');
+});
+
 test('SC-05 plan stability keeps current task unless material trigger',()=>{
   let s=createInitialState(); s=addThing(s,{id:'cur',title:'Current',priority:1,durationMinutes:20},at('2026-08-18T00:00:00Z')); s=addThing(s,{id:'other',title:'Other',priority:2,durationMinutes:20},at('2026-08-18T00:00:00Z')); s=startThing(s,'cur',at('2026-08-18T00:01:00Z'));
   const stable=getPlan(s,{now:at('2026-08-18T00:02:00Z'),availableMinutes:30,materialTrigger:false}); assert.equal(stable.candidates[0].thing.id,'cur');
