@@ -1,4 +1,4 @@
-const CACHE='nagi-v0-3';
+const CACHE='nagi-v0-4';
 const ASSETS=['./','./index.html','./styles.css','./src/app.js','./src/core/model.js','./src/core/planner.js','./src/core/engine.js','./src/core/store.js','./src/adapters/local-advisor.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&k.startsWith('nagi-')).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
