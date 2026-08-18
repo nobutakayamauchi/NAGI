@@ -10,6 +10,16 @@ const els = {
   currentActions:$('currentActions'), stateBadge:$('stateBadge'), watchWarning:$('watchWarning'), checkpointCount:$('checkpointCount')
 };
 const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const STATE_LABELS = Object.freeze({
+  [STATES.READY]:'今できる',
+  [STATES.RUNNING]:'いまやってる',
+  [STATES.WAITING]:'待ち',
+  [STATES.BLOCKED]:'止まってる',
+  [STATES.DONE]:'完了',
+  [STATES.CANCELLED]:'取り消し',
+  [STATES.UNKNOWN]:'確認が必要'
+});
+const stateLabel = value => STATE_LABELS[value] || '確認が必要';
 function persist(){ saveState(state); render(); }
 
 function currentThing(){ return state.things.find(t=>t.id===state.currentId) || null; }
@@ -34,14 +44,14 @@ function showPlan({materialTrigger=false, message=null}={}){
 function render(){
   $('intentSelect').value=state.intent || 'work';
   const cur=currentThing();
-  els.stateBadge.textContent=cur?cur.state:'READY';
+  els.stateBadge.textContent=cur?stateLabel(cur.state):'今は作業なし';
   els.currentActions.classList.toggle('hidden',!cur);
   if(cur) els.advisor.textContent=`いま「${cur.title}」をやってる。途中で飛んでも、戻る場所は残せるよ。`;
 
   els.thingList.innerHTML='';
   for(const t of [...state.things].reverse()){
     const row=document.createElement('div'); row.className='thing';
-    row.innerHTML=`<div class="thing-main"><div class="thing-title">${esc(t.title)}</div><div class="meta">${esc(t.durationMinutes)}分 · ${esc(t.intent)}</div></div><span class="thing-state">${esc(t.state)}</span>${t.state===STATES.READY?`<button data-start="${esc(t.id)}">開始</button>`:''}${[STATES.WAITING,STATES.BLOCKED].includes(t.state)?`<button data-ready="${esc(t.id)}">戻す</button>`:''}`;
+    row.innerHTML=`<div class="thing-main"><div class="thing-title">${esc(t.title)}</div><div class="meta">${esc(t.durationMinutes)}分 · ${esc(t.intent)}</div></div><span class="thing-state">${esc(stateLabel(t.state))}</span>${t.state===STATES.READY?`<button data-start="${esc(t.id)}">開始</button>`:''}${[STATES.WAITING,STATES.BLOCKED].includes(t.state)?`<button data-ready="${esc(t.id)}">戻す</button>`:''}`;
     els.thingList.appendChild(row);
   }
 
