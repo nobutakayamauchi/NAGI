@@ -20,6 +20,14 @@ const STATE_LABELS = Object.freeze({
   [STATES.UNKNOWN]:'確認が必要'
 });
 const stateLabel = value => STATE_LABELS[value] || '確認が必要';
+const INTENT_LABELS = Object.freeze({ work:'仕事・用事', rest:'休む', play:'遊ぶ', social:'人と過ごす' });
+const intentLabel = value => INTENT_LABELS[value] || '目的未設定';
+const checkpointMemory = cp => {
+  const parts = [];
+  if (cp.progress) parts.push(`最後に覚えた：${cp.progress}`);
+  if (cp.nextAction) parts.push(`次にやる予定だった：${cp.nextAction}`);
+  return parts.join(' / ');
+};
 function persist(){ saveState(state); render(); }
 
 function currentThing(){ return state.things.find(t=>t.id===state.currentId) || null; }
@@ -51,7 +59,7 @@ function render(){
   els.thingList.innerHTML='';
   for(const t of [...state.things].reverse()){
     const row=document.createElement('div'); row.className='thing';
-    row.innerHTML=`<div class="thing-main"><div class="thing-title">${esc(t.title)}</div><div class="meta">${esc(t.durationMinutes)}分 · ${esc(t.intent)}</div></div><span class="thing-state">${esc(stateLabel(t.state))}</span>${t.state===STATES.READY?`<button data-start="${esc(t.id)}">開始</button>`:''}${[STATES.WAITING,STATES.BLOCKED].includes(t.state)?`<button data-ready="${esc(t.id)}">戻す</button>`:''}`;
+    row.innerHTML=`<div class="thing-main"><div class="thing-title">${esc(t.title)}</div><div class="meta">${esc(t.durationMinutes)}分 · ${esc(intentLabel(t.intent))}</div></div><span class="thing-state">${esc(stateLabel(t.state))}</span>${t.state===STATES.READY?`<button data-start="${esc(t.id)}">開始</button>`:''}${[STATES.WAITING,STATES.BLOCKED].includes(t.state)?`<button data-ready="${esc(t.id)}">戻す</button>`:''}`;
     els.thingList.appendChild(row);
   }
 
@@ -59,7 +67,8 @@ function render(){
   const cps=[...state.checkpoints].reverse().slice(0,5); els.checkpointCount.textContent=`${state.checkpoints.length}件`;
   for(const cp of cps){
     const row=document.createElement('div'); row.className='checkpoint';
-    row.innerHTML=`<div class="thing-main"><div class="thing-title">${esc(cp.title)}</div><div class="meta">最後に覚えた場所 · ${new Date(cp.createdAt).toLocaleString('ja-JP')}</div></div><button data-resume="${esc(cp.id)}">戻る</button>`;
+    const memory=checkpointMemory(cp);
+    row.innerHTML=`<div class="thing-main"><div class="thing-title">${esc(cp.title)}</div><div class="meta">最後に覚えた場所 · ${new Date(cp.createdAt).toLocaleString('ja-JP')}${memory?`<br>${esc(memory)}`:''}</div></div><button data-resume="${esc(cp.id)}">戻る</button>`;
     els.checkpointList.appendChild(row);
   }
 
@@ -78,14 +87,18 @@ $('quickGrid').addEventListener('click',e=>{
   if(a==='resume'){
     const cp=[...state.checkpoints].reverse().find(cp=>{const t=state.things.find(x=>x.id===cp.thingId);return t&&[STATES.READY,STATES.RUNNING].includes(t.state)});
     if(!cp){els.advisor.textContent='戻れる場所がまだない。途中で止める時に「ここまで覚えといて」を使えるよ。';els.candidates.innerHTML='';return;}
-    const r=resumeFromCheckpoint(state,cp.id); state=r.state; persist(); els.advisor.textContent=r.status==='RESUMED'?`「${cp.title}」の最後に覚えた場所へ戻した。今の状態も確認してから再開してる。`:`「${cp.title}」は最後に覚えた場所はあるけど、今も実行可能とは確認できない。`;
+    const r=resumeFromCheckpoint(state,cp.id); state=r.state; persist();
+    const memory=checkpointMemory(cp);
+    els.advisor.textContent=r.status==='RESUMED'
+      ? `「${cp.title}」へ戻した。${memory?`${memory}。`:''}これは最後に覚えた内容なので、今の状態も確認しながら再開しよう。`
+      : `「${cp.title}」は最後に覚えた場所はあるけど、今も実行可能とは確認できない。`;
   }
 });
 
 document.addEventListener('click',e=>{
   const start=e.target.dataset.start;if(start){state=startThing(state,start);persist();return;}
   const ready=e.target.dataset.ready;if(ready){state=setThingState(state,ready,STATES.READY);persist();showPlan({materialTrigger:true});return;}
-  const resume=e.target.dataset.resume;if(resume){const r=resumeFromCheckpoint(state,resume);state=r.state;persist();els.advisor.textContent=r.status==='RESUMED'?'最後に覚えた場所を確認して再開した。':'このCheckpointは最後の記憶として残ってるけど、今はそのまま再開できない。';return;}
+  const resume=e.target.dataset.resume;if(resume){const cp=state.checkpoints.find(c=>c.id===resume);const r=resumeFromCheckpoint(state,resume);state=r.state;persist();const memory=cp?checkpointMemory(cp):'';els.advisor.textContent=r.status==='RESUMED'?`最後に覚えた場所から再開した。${memory?`${memory}。`:''}今の状態も確認しながら進めよう。`:'この「戻れる場所」は最後の記憶として残ってるけど、今はそのまま再開できない。';return;}
   if(e.target.dataset.noaction){els.advisor.textContent='今は決めない、でOK。必要になったらまた呼んで。';els.candidates.innerHTML='';}
 });
 
