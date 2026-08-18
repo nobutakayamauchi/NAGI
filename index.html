@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5f3ee" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="/styles.css" />
+  <title>NAGI v0</title>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="mark">凪</div>
+      <div>
+        <h1>NAGI</h1>
+        <p>困った時に、少し持ちます。</p>
+      </div>
+      <button id="exportBtn" class="ghost small">書き出す</button>
+    </header>
+
+    <section class="panel ask-panel">
+      <h2>どうした？</h2>
+      <div class="quick-grid" id="quickGrid">
+        <button data-action="next">何したらいい？</button>
+        <button data-action="resume">何してたっけ？</button>
+        <button data-action="replan">予定が崩れた</button>
+        <button data-action="free">予定が空いた</button>
+      </div>
+      <div class="intent-row">
+        <span>今の目的</span>
+        <select id="intentSelect">
+          <option value="work">仕事・用事</option>
+          <option value="rest">休む</option>
+          <option value="play">遊ぶ</option>
+          <option value="social">人と過ごす</option>
+        </select>
+        <label>空き <input id="availableInput" type="number" min="5" step="5" value="60" />分</label>
+      </div>
+    </section>
+
+    <section class="panel now-panel">
+      <div class="section-head"><h2>いま</h2><span id="stateBadge" class="badge">READY</span></div>
+      <div id="advisor" class="advisor">まだ何も抱えてないよ。下からひとつ置いてみて。</div>
+      <div id="candidateList" class="candidates"></div>
+      <div id="currentActions" class="action-row hidden">
+        <button id="checkpointBtn">ここまで覚えといて</button>
+        <button id="waitBtn" class="secondary">返信待ち</button>
+        <button id="doneBtn" class="primary">終わった</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head"><h2>置いておく</h2><span class="muted">雑でOK</span></div>
+      <form id="thingForm" class="thing-form">
+        <input id="titleInput" required maxlength="120" placeholder="例：請求書を送る" />
+        <div class="form-row">
+          <label>目安 <input id="durationInput" type="number" min="1" max="480" value="25" />分</label>
+          <label>目的
+            <select id="thingIntent">
+              <option value="work">仕事・用事</option>
+              <option value="rest">休む</option>
+              <option value="play">遊ぶ</option>
+              <option value="social">人と過ごす</option>
+            </select>
+          </label>
+          <button class="primary" type="submit">追加</button>
+        </div>
+      </form>
+      <div id="thingList" class="thing-list"></div>
+    </section>
+
+    <section class="panel compact">
+      <div class="section-head"><h2>戻れる場所</h2><span id="checkpointCount" class="muted"></span></div>
+      <div id="checkpointList" class="checkpoint-list"></div>
+    </section>
+
+    <section id="watchWarning" class="panel warning hidden"></section>
+
+    <footer>
+      <p>v0 / local-first. この端末のブラウザ保存は永久保管ではありません。</p>
+    </footer>
+  </main>
+  <script type="module" src="/src/app.js"></script>
+</body>
+</html>
