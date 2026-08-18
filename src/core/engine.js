@@ -24,6 +24,16 @@ export function addThing(state, input, now = new Date()) {
   return { ...state, things: [...state.things, createThing(input, now)] };
 }
 
+export function appendCurrentNote(state, note, now = new Date()) {
+  if (!state.currentId) return state;
+  const text = String(note ?? '').trim();
+  if (!text) return state;
+  const thing = state.things.find(t => t.id === state.currentId);
+  if (!thing) return state;
+  const notes = [thing.notes, text].filter(Boolean).join('\n');
+  return replaceThing(state, { ...thing, notes, updatedAt: now.toISOString() });
+}
+
 export function setIntent(state, intent) { return { ...state, intent }; }
 
 export function setThingState(state, thingId, nextState, now = new Date()) {
